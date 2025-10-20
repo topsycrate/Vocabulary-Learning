@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-M" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Vocabulary Mini</title>
   <style>
@@ -17,7 +16,7 @@
     .panel{background:var(--card);border:1px solid #1a253b;border-radius:14px;padding:14px}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
     @media (min-width:720px){ .grid{grid-template-columns:1.1fr 1fr} }
-    select,button{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #263149;background:#0e1626;color:var(--text);font-size:15px}
+    select,button,input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #263149;background:#0e1626;color:var(--text);font-size:15px}
     button.primary{background:linear-gradient(135deg,#2970ff,#5cc8ff);border:none;color:#fff;font-weight:700}
     button.ghost{background:#0e1626}
     button:disabled{opacity:.6}
@@ -25,7 +24,9 @@
     .card{border:1px solid #20314f;background:#0f1829;border-radius:12px;padding:12px}
     .term{font-size:22px;font-weight:900;margin:2px 0 6px;display:flex;align-items:center;gap:8px}
     .ipa{font-size:16px;color:#bcd0ea}
-    .defs{color:#d6e2f5;font-size:15px;line-height:1.55}
+    .stars{font-size:16px; color: #ffc700;}
+    .defs{color:#d6e2f5;font-size:15px;line-height:1.6}
+    .ch-part { color: #a9b8ce; font-size: 14px; margin-left: 8px; display: none; }
     .quiz{margin-top:10px}
     .q-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
     .pill{font-size:12px;padding:6px 10px;border-radius:999px;background:#0e1626;border:1px solid #20314f;color:#bcd0ea}
@@ -49,6 +50,8 @@
     .speak{border:1px solid #20314f;background:#0e1626;color:#e8f0ff;border-radius:8px;padding:6px 10px;font-size:13px}
     .def-reveal{margin-top:10px;border-top:1px dashed #20314f;padding-top:10px;cursor:pointer}
     .hint{font-size:12px;color:#9fb0c6;margin-top:6px}
+    .checkbox-wrapper{display:flex;align-items:center;gap:8px;margin-top:10px;}
+    .checkbox-wrapper label{font-size:14px;color:var(--muted);cursor:pointer;}
   </style>
 </head>
 <body>
@@ -66,211 +69,332 @@
       <section class="panel">
         <div style="display:grid;gap:10px">
           <label>
+            <div class="muted">选择单词表 (CSV)</div>
+            <select id="csvSelect"></select>
+          </label>
+          <label>
             <div class="muted">选择单元</div>
-            <select id="unitSelect"></select>
+            <select id="unitSelect" disabled></select>
           </label>
           <div class="row">
-            <button class="primary" id="btnStudy">开始学习</button>
-            <button class="ghost" id="btnQuiz">开始测验</button>
+            <button class="primary" id="btnStudy" disabled>开始学习</button>
+            <button class="ghost" id="btnQuiz" disabled>开始测验</button>
           </div>
           <div class="note">学习：逐个单词 + IPA + 发音；不认识会重复。测验：选择正确释义。</div>
         </div>
       </section>
       <section class="panel" id="content">
-        <div class="muted">请选择单元并点击上方按钮开始。</div>
+        <div class="muted">请先选择一个单词表加载...</div>
       </section>
     </div>
     <footer>Build time: 2025-10-13 Copyright。</footer>
   </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
 <script>
-const WORDS = [{"unit":1,"term":"adventurous","ipa":"/ədˈventʃərəs/","pos":"a.","def":"If someone is adventurous, they are willing to try new experiences or take risks.","masked":"If someone is ______, they are willing to try new experiences or take risks."},{"unit":1,"term":"aggressive","ipa":"/əˈɡresɪv/","pos":"a.","def":"Someone who is aggressive behaves in an angry, threatening way.","masked":"Someone who is ______ behaves in an angry, threatening way."},{"unit":1,"term":"anonymous","ipa":"/əˈnɒnɪməs/","pos":"a.","def":"If someone is anonymous, their name is not given or known.","masked":"If someone is ______, their name is not given or known."},{"unit":1,"term":"approach","ipa":"/əˈprəʊtʃ/","pos":"v./n.","def":"If you approach someone or something, you move towards them. / An approach is a way of dealing with something or someone.","masked":"If you ______ someone or something, you move towards them. / An ______ is a way of dealing with something or someone."},{"unit":1,"term":"authentic","ipa":"/ɔːˈθentɪk/","pos":"a.","def":"If something is authentic, it is genuine, real, or true.","masked":"If something is ______, it is genuine, real, or true."},{"unit":1,"term":"awesome","ipa":"/ˈɔːsəm/","pos":"a.","def":"If something is awesome, it inspires awe or great admiration.","masked":"If something is ______, it inspires awe or great admiration."},{"unit":1,"term":"awkward","ipa":"/ˈɔːkwəd/","pos":"a.","def":"If a situation is awkward, it is embarrassing or difficult to deal with.","masked":"If a situation is ______, it is embarrassing or difficult to deal with."},{"unit":1,"term":"bias","ipa":"/ˈbaɪəs/","pos":"n.","def":"A bias is a tendency to prefer one person or thing to another, and to favor that person or thing.","masked":"A ______ is a tendency to prefer one person or thing to another, and to favor that person or thing."},{"unit":1,"term":"boundary","ipa":"/ˈbaʊndri/","pos":"n.","def":"A boundary is a real or imaginary line that marks the edge or limit of something.","masked":"A ______ is a real or imaginary line that marks the edge or limit of something."},{"unit":1,"term":"by extension","ipa":"/baɪ ɪkˈstenʃn/","pos":"—","def":"If you say that something is true by extension, you mean that it is true as a natural development of or conclusion from something else.","masked":"If you say that something is true ______, you mean that it is true as a natural development of or conclusion from something else."},{"unit":1,"term":"cheesy","ipa":"/ˈtʃiːzi/","pos":"a.","def":"If you describe something as cheesy, you mean it is cheap, unpleasant, or in poor taste.","masked":"If you describe something as ______, you mean it is cheap, unpleasant, or in poor taste."},{"unit":1,"term":"clumsy","ipa":"/ˈklʌmzi/","pos":"a.","def":"If someone is clumsy, they move or handle things in a careless, awkward way.","masked":"If someone is ______, they move or handle things in a careless, awkward way."},{"unit":1,"term":"cognition","ipa":"/kɒɡˈnɪʃn/","pos":"n.","def":"Cognition is the mental process involved in knowing, learning, and understanding things.","masked":"______ is the mental process involved in knowing, learning, and understanding things."},{"unit":1,"term":"cognitive","ipa":"/ˈkɒɡnətɪv/","pos":"a.","def":"Cognitive means relating to the mental process involved in knowing, learning, and understanding things.","masked":"______ means relating to the mental process involved in knowing, learning, and understanding things."},{"unit":1,"term":"competency","ipa":"/ˈkɒmpɪtənsi/","pos":"n.","def":"A competency is a skill that you need in a particular job or for a particular task.","masked":"A ______ is a skill that you need in a particular job or for a particular task."},{"unit":1,"term":"competent","ipa":"/ˈkɒmpɪtənt/","pos":"a.","def":"Someone who is competent has the ability, knowledge, or skill to do something well.","masked":"Someone who is ______ has the ability, knowledge, or skill to do something well."},{"unit":1,"term":"compliment","ipa":"/ˈkɒmplɪment/","pos":"v.","def":"If you compliment someone, you say something nice to them about their appearance, achievements, or abilities.","masked":"If you ______ someone, you say something nice to them about their appearance, achievements, or abilities."},{"unit":1,"term":"correlate","ipa":"/ˈkɒrəleɪt/","pos":"v.","def":"If one thing correlates with another, there is a close similarity or connection between them.","masked":"If one thing ______s with another, there is a close similarity or connection between them."},{"unit":1,"term":"dedicate","ipa":"/ˈdedɪkeɪt/","pos":"v.","def":"If you dedicate something you have created to someone, you say that it is made or performed specially for them.","masked":"If you ______ something you have created to someone, you say that it is made or performed specially for them."},{"unit":1,"term":"devastating","ipa":"/ˈdevəsteɪtɪŋ/","pos":"a.","def":"If something is devastating, it causes a lot of destruction or makes people very upset.","masked":"If something is ______, it causes a lot of destruction or makes people very upset."},{"unit":1,"term":"diagnostic","ipa":"/ˌdaɪəɡˈnɒstɪk/","pos":"a.","def":"Diagnostic tests and methods are used to find out what is wrong with someone who is ill.","masked":"______ tests and methods are used to find out what is wrong with someone who is ill."},{"unit":1,"term":"disclose","ipa":"/dɪsˈkləʊz/","pos":"v.","def":"If you disclose information, you tell people about it, especially when it was secret.","masked":"If you ______ information, you tell people about it, especially when it was secret."},{"unit":1,"term":"flaw","ipa":"/flɔː/","pos":"n.","def":"A flaw in something is a mistake or weakness in it that makes it less than perfect.","masked":"A ______ in something is a mistake or weakness in it that makes it less than perfect."},{"unit":1,"term":"flip","ipa":"/flɪp/","pos":"v.","def":"If you flip from one state or situation to another, you change suddenly from one to the other.","masked":"If you ______ from one state or situation to another, you change suddenly from one to the other."},{"unit":1,"term":"forge","ipa":"/fɔːdʒ/","pos":"v.","def":"If you forge a relationship or reputation, you create it with a lot of hard work.","masked":"If you ______ a relationship or reputation, you create it with a lot of hard work."},{"unit":1,"term":"frown","ipa":"/fraʊn/","pos":"n.","def":"If you frown, you move your eyebrows down and closer together, usually because you are annoyed, worried, or confused.","masked":"If you ______, you move your eyebrows down and closer together, usually because you are annoyed, worried, or confused."},{"unit":1,"term":"fuss","ipa":"/fʌs/","pos":"v.","def":"If you fuss about something, you worry about it or pay too much attention to unimportant details.","masked":"If you ______ about something, you worry about it or pay too much attention to unimportant details."},{"unit":1,"term":"gaze","ipa":"/ɡeɪz/","pos":"n.","def":"If you gaze at something, you look at it for a long time, especially in admiration or in surprise.","masked":"If you ______ at something, you look at it for a long time, especially in admiration or in surprise."},{"unit":1,"term":"gravity","ipa":"/ˈɡrævɪti/","pos":"n.","def":"The gravity of a situation is its extreme seriousness.","masked":"The ______ of a situation is its extreme seriousness."},{"unit":1,"term":"harshly","ipa":"/ˈhɑːʃli/","pos":"ad.","def":"If someone speaks or behaves harshly, they do so in a severe or unkind way.","masked":"If someone speaks or behaves ______, they do so in a severe or unkind way."},{"unit":1,"term":"infer","ipa":"/ɪnˈfɜː(r)/","pos":"v.","def":"If you infer something, you come to a conclusion based on information that you already have.","masked":"If you ______ something, you come to a conclusion based on information that you already have."},{"unit":1,"term":"initial","ipa":"/ɪˈnɪʃl/","pos":"a.","def":"You use initial to describe something that happens at the beginning of a process.","masked":"You use ______ to describe something that happens at the beginning of a process."},{"unit":1,"term":"intimacy","ipa":"/ˈɪntɪməsi/","pos":"n.","def":"Intimacy is the state of having a close personal relationship with someone.","masked":"______ is the state of having a close personal relationship with someone."},{"unit":1,"term":"intimate","ipa":"/ˈɪntɪmət/","pos":"a.","def":"If you have an intimate friendship or knowledge of something, your friendship or knowledge is very close or detailed.","masked":"If you have an ______ friendship or knowledge of something, your friendship or knowledge is very close or detailed."},{"unit":1,"term":"jerk","ipa":"/dʒɜːk/","pos":"n.","def":"If you call someone a jerk, you think they are stupid or that you cannot rely on them.","masked":"If you call someone a ______, you think they are stupid or that you cannot rely on them."},{"unit":1,"term":"negativity","ipa":"/ˌneɡəˈtɪvəti/","pos":"n.","def":"Negativity is the expression of criticism of or pessimism about something.","masked":"______ is the expression of criticism of or pessimism about something."},{"unit":1,"term":"obnoxious","ipa":"/əbˈnɒkʃəs/","pos":"a.","def":"If you say that someone or something is obnoxious, you find them very unpleasant.","masked":"If you say that someone or something is ______, you find them very unpleasant."},{"unit":1,"term":"pal","ipa":"/pæl/","pos":"n.","def":"Your pal is your friend.","masked":"Your ______ is your friend."},{"unit":1,"term":"perceive","ipa":"/pəˈsiːv/","pos":"v.","def":"If you perceive something, you see, notice, or realize it, especially when it is not obvious.","masked":"If you ______ something, you see, notice, or realize it, especially when it is not obvious."},{"unit":1,"term":"perception","ipa":"/pəˈsepʃn/","pos":"n.","def":"Your perception of something is the way that you think about it or the impression you have of it.","masked":"Your ______ of something is the way that you think about it or the impression you have of it."},{"unit":1,"term":"playlist","ipa":"/ˈpleɪlɪst/","pos":"n.","def":"A playlist is a list of songs or pieces of music chosen to be played in a particular order.","masked":"A ______ is a list of songs or pieces of music chosen to be played in a particular order."},{"unit":1,"term":"plush","ipa":"/plʌʃ/","pos":"a.","def":"Plush materials or objects have a very soft, thick texture.","masked":"______ materials or objects have a very soft, thick texture."},{"unit":1,"term":"plushy","ipa":"/ˈplʌʃi/","pos":"a.","def":"Something that is plushy is soft and has a thick pile.","masked":"Something that is ______ is soft and has a thick pile."},{"unit":1,"term":"protocol","ipa":"/ˈprəʊtəkɒl/","pos":"n.","def":"A protocol is a system of rules that explain the correct conduct and procedures to be followed in formal situations.","masked":"A ______ is a system of rules that explain the correct conduct and procedures to be followed in formal situations."},{"unit":1,"term":"put off","ipa":"/pʊt ɒf/","pos":"v.","def":"If someone or something puts you off, they make you dislike them or lose interest in them.","masked":"If someone or something puts you off, they make you dislike them or lose interest in them."},{"unit":1,"term":"rarity","ipa":"/ˈreərəti/","pos":"n.","def":"If you describe something or someone as a rarity, you mean that they are uncommon or unusual.","masked":"If you describe something or someone as a ______, you mean that they are uncommon or unusual."},{"unit":1,"term":"rehearse","ipa":"/rɪˈhɜːs/","pos":"v.","def":"When actors or musicians rehearse, they practice a play or piece of music in order to prepare for a performance.","masked":"When actors or musicians ______, they practice a play or piece of music in order to prepare for a performance."},{"unit":1,"term":"resurface","ipa":"/ˌriːˈsɜːfɪs/","pos":"v.","def":"If someone or something resurfaces, they appear again after not having been seen or heard of for some time.","masked":"If someone or something ______s, they appear again after not having been seen or heard of for some time."},{"unit":1,"term":"reunite","ipa":"/ˌriːjuːˈnaɪt/","pos":"v.","def":"When people reunite, or when someone reunites them, they meet again after they have been apart.","masked":"When people ______, or when someone ______s them, they meet again after they have been apart."},{"unit":1,"term":"revealing","ipa":"/rɪˈviːlɪŋ/","pos":"a.","def":"Something that is revealing tells you something interesting or surprising about a person or situation.","masked":"Something that is ______ tells you something interesting or surprising about a person or situation."},{"unit":1,"term":"savor","ipa":"/ˈseɪvə(r)/","pos":"v.","def":"If you savor something, you enjoy it to the full.","masked":"If you ______ something, you enjoy it to the full."},{"unit":1,"term":"sentimental","ipa":"/ˌsentɪˈmentl/","pos":"a.","def":"If you describe someone or something as sentimental, you mean that they show or involve feelings such as love or sadness, often in a way that seems excessive.","masked":"If you describe someone or something as ______, you mean that they show or involve feelings such as love or sadness, often in a way that seems excessive."},{"unit":1,"term":"statistical property","ipa":"/stəˈtɪstɪkl ˈprɒpəti/","pos":"n.","def":"A statistical property is a characteristic of a set of data that can be determined by statistical analysis.","masked":"A ______ is a characteristic of a set of data that can be determined by statistical analysis."},{"unit":1,"term":"stringent","ipa":"/ˈstrɪndʒənt/","pos":"a.","def":"Stringent rules, laws, or conditions are very strict and must be obeyed.","masked":"______ rules, laws, or conditions are very strict and must be obeyed."},{"unit":1,"term":"tangible","ipa":"/ˈtændʒəbl/","pos":"a.","def":"Something that is tangible is real and can be seen, touched, or measured.","masked":"Something that is ______ is real and can be seen, touched, or measured."},{"unit":1,"term":"textile","ipa":"/ˈtekstaɪl/","pos":"n.","def":"Textiles are cloths or fabrics.","masked":"______s are cloths or fabrics."},{"unit":1,"term":"trait","ipa":"/treɪt/","pos":"n.","def":"A trait is a particular characteristic, quality, or tendency that someone or something has.","masked":"A ______ is a particular characteristic, quality, or tendency that someone or something has."},{"unit":1,"term":"ultimately","ipa":"/ˈʌltɪmətli/","pos":"ad.","def":"You use ultimately to indicate that the most important fact about something is the one you are about to mention.","masked":"You use ______ to indicate that the most important fact about something is the one you are about to mention."},{"unit":2,"term":"access","ipa":"/ˈækses/","pos":"n.","def":"If you have access to a place or person, you are able to reach, approach, or contact them.","masked":"If you have ______ to a place or person, you are able to reach, approach, or contact them."},{"unit":2,"term":"addictive","ipa":"/əˈdɪktɪv/","pos":"a.","def":"An addictive substance is one that makes people want it so much that they find it very difficult to stop having it.","masked":"An ______ substance is one that makes people want it so much that they find it very difficult to stop having it."},{"unit":2,"term":"alter","ipa":"/ˈɔːltə(r)/","pos":"v.","def":"If something alters or if you alter it, it changes.","masked":"If something ______s or if you ______ it, it changes."},{"unit":2,"term":"carbohydrate","ipa":"/ˌkɑːbəˈhaɪdreɪt/","pos":"n.","def":"Carbohydrates are substances in food such as sugar, bread, and potatoes that provide your body with heat and energy.","masked":"______s are substances in food such as sugar, bread, and potatoes that provide your body with heat and energy."},{"unit":2,"term":"certify","ipa":"/ˈsɜːtɪfaɪ/","pos":"v.","def":"If a fact, situation, or claim is certified, it is officially confirmed or approved.","masked":"If a fact, situation, or claim is certified, it is officially confirmed or approved."},{"unit":2,"term":"documentary","ipa":"/ˌdɒkjuˈmentəri/","pos":"a.","def":"A documentary film or television program provides a factual record or report.","masked":"A ______ film or television program provides a factual record or report."},{"unit":2,"term":"dominate","ipa":"/ˈdɒmɪneɪt/","pos":"v.","def":"If someone or something dominates a situation, they have more power, importance, or influence than anyone or anything else involved.","masked":"If someone or something ______s a situation, they have more power, importance, or influence than anyone or anything else involved."},{"unit":2,"term":"ecosystem","ipa":"/ˈiːkəʊsɪstəm/","pos":"n.","def":"An ecosystem is all the plants and animals that live in a particular area together with the complex relationship that exists between them and their environment.","masked":"An ______ is all the plants and animals that live in a particular area together with the complex relationship that exists between them and their environment."},{"unit":2,"term":"extinct","ipa":"/ɪkˈstɪŋkt/","pos":"a.","def":"When a species of animal or plant is extinct, it no longer exists anywhere in the world.","masked":"When a species of animal or plant is ______, it no longer exists anywhere in the world."},{"unit":2,"term":"fossil fuel","ipa":"/ˈfɒsl ˌfjuːəl/","pos":"n.","def":"Fossil fuels are fuels such as coal or oil that are formed from the remains of living organisms.","masked":"______s are fuels such as coal or oil that are formed from the remains of living organisms."},{"unit":2,"term":"from scratch","ipa":"/frəm skrætʃ/","pos":"—","def":"If you do something from scratch, you do it from the beginning without using anything that already exists.","masked":"If you do something ______, you do it from the beginning without using anything that already exists."},{"unit":2,"term":"gauge","ipa":"/ɡeɪdʒ/","pos":"n.","def":"A gauge is an instrument that measures and gives a visual display of the amount or volume of something.","masked":"A ______ is an instrument that measures and gives a visual display of the amount or volume of something."},{"unit":2,"term":"guinea pig","ipa":"/ˈɡɪni pɪɡ/","pos":"n.","def":"If you refer to someone as a guinea pig, you mean that they are being used to test a new idea or product.","masked":"If you refer to someone as a ______, you mean that they are being used to test a new idea or product."},{"unit":2,"term":"habitat","ipa":"/ˈhæbɪtæt/","pos":"n.","def":"The habitat of an animal or plant is the natural environment in which it normally lives or grows.","masked":"The ______ of an animal or plant is the natural environment in which it normally lives or grows."},{"unit":2,"term":"herbicide","ipa":"/ˈhɜːbɪsaɪd/","pos":"n.","def":"A herbicide is a chemical substance used to kill unwanted plants.","masked":"A ______ is a chemical substance used to kill unwanted plants."},{"unit":2,"term":"hormone","ipa":"/ˈhɔːməʊn/","pos":"n.","def":"Hormones are substances produced by glands in your body which influence growth, development, and the functioning of various organs.","masked":"______s are substances produced by glands in your body which influence growth, development, and the functioning of various organs."},{"unit":2,"term":"incorporate","ipa":"/ɪnˈkɔːpəreɪt/","pos":"v.","def":"If you incorporate one thing into another, you include it or make it part of the other thing.","masked":"If you ______ one thing into another, you include it or make it part of the other thing."},{"unit":2,"term":"ingredient","ipa":"/ɪnˈɡriːdiənt/","pos":"n.","def":"An ingredient is one of the things from which something is made, especially one of the foods that are used together to make a particular dish.","masked":"An ______ is one of the things from which something is made, especially one of the foods that are used together to make a particular dish."},{"unit":2,"term":"lunatic","ipa":"/ˈluːnətɪk/","pos":"a.","def":"If you describe a person or their behavior as lunatic, you mean that they are crazy or very foolish.","masked":"If you describe a person or their behavior as ______, you mean that they are crazy or very foolish."},{"unit":2,"term":"medication","ipa":"/ˌmedɪˈkeɪʃn/","pos":"n.","def":"Medication refers to a drug or other form of medicine that is used to treat or prevent disease.","masked":"______ refers to a drug or other form of medicine that is used to treat or prevent disease."},{"unit":2,"term":"moldy","ipa":"/ˈməʊldi/","pos":"a.","def":"Something that is moldy has a growth of mold on it.","masked":"Something that is ______ has a growth of mold on it."},{"unit":2,"term":"mutate","ipa":"/mjuːˈteɪt/","pos":"v.","def":"When something mutates, it changes and becomes different.","masked":"When something ______s, it changes and becomes different."},{"unit":2,"term":"nutrient","ipa":"/ˈnjuːtriənt/","pos":"n.","def":"A nutrient is a substance that living things need in order to live and grow.","masked":"A ______ is a substance that living things need in order to live and grow."},{"unit":2,"term":"pasta","ipa":"/ˈpæstə/","pos":"n.","def":"Pasta is a type of food made from flour, eggs, and water, formed into various shapes and typically cooked in boiling water.","masked":"______ is a type of food made from flour, eggs, and water, formed into various shapes and typically cooked in boiling water."},{"unit":2,"term":"poultry","ipa":"/ˈpəʊltri/","pos":"n.","def":"Poultry is chickens, ducks, and other birds that are kept on a farm for their eggs or meat.","masked":"______ is chickens, ducks, and other birds that are kept on a farm for their eggs or meat."},{"unit":2,"term":"prescribe","ipa":"/prɪˈskraɪb/","pos":"v.","def":"When a doctor prescribes a drug or treatment, they say that you should have it.","masked":"When a doctor ______s a drug or treatment, they say that you should have it."},{"unit":2,"term":"prolong","ipa":"/prəˈlɒŋ/","pos":"v.","def":"To prolong an event or situation means to make it last longer.","masked":"To ______ an event or situation means to make it last longer."},{"unit":2,"term":"registered","ipa":"/ˈredʒɪstəd/","pos":"a.","def":"If someone is registered as something, their name is on an official list as being that thing.","masked":"If someone is ______ as something, their name is on an official list as being that thing."},{"unit":2,"term":"serving","ipa":"/ˈsɜːvɪŋ/","pos":"n.","def":"A serving is an amount of food or drink that is intended to be eaten or drunk by one person at one time.","masked":"A ______ is an amount of food or drink that is intended to be eaten or drunk by one person at one time."},{"unit":2,"term":"species","ipa":"/ˈspiːʃiːz/","pos":"n.","def":"A species is a class of plants or animals whose members have the same main characteristics and are able to breed with each other.","masked":"A ______ is a class of plants or animals whose members have the same main characteristics and are able to breed with each other."},{"unit":2,"term":"strip","ipa":"/strɪp/","pos":"v.","def":"If you strip something from something else, you remove it completely.","masked":"If you ______ something from something else, you remove it completely."},{"unit":2,"term":"supplement","ipa":"/ˈsʌplɪmənt/","pos":"n.","def":"A supplement is something that is added to something else in order to improve it or complete it.","masked":"A ______ is something that is added to something else in order to improve it or complete it."},{"unit":2,"term":"trigger","ipa":"/ˈtrɪɡə(r)/","pos":"v.","def":"To trigger something means to make it happen or start.","masked":"To ______ something means to make it happen or start."},{"unit":2,"term":"vaccine","ipa":"/vækˈsiːn/","pos":"n.","def":"A vaccine is a substance containing a harmless form of the germs that cause a particular disease.","masked":"A ______ is a substance containing a harmless form of the germs that cause a particular disease."},{"unit":2,"term":"vegetarian","ipa":"/ˌvedʒəˈteəriən/","pos":"n.","def":"A vegetarian is a person who does not eat meat or fish.","masked":"A ______ is a person who does not eat meat or fish."},{"unit":2,"term":"vegan","ipa":"/ˈviːɡən/","pos":"n.","def":"A vegan is a person who does not eat or use any animal products, such as meat, fish, eggs, cheese, or leather.","masked":"A ______ is a person who does not eat or use any animal products, such as meat, fish, eggs, cheese, or leather."},{"unit":2,"term":"vitamin","ipa":"/ˈvɪtəmɪn/","pos":"n.","def":"Vitamins are substances that are found in food and that your body needs to work normally and be healthy.","masked":"______s are substances that are found in food and that your body needs to work normally and be healthy."},{"unit":2,"term":"yoghurt","ipa":"/ˈjɒɡət/","pos":"n.","def":"Yoghurt is a thick, smooth food made from milk that has been soured and made thicker by bacteria.","masked":"______ is a thick, smooth food made from milk that has been soured and made thicker by bacteria."},{"unit":3,"term":"amateur","ipa":"/ˈæmətə(r)/","pos":"a.","def":"Amateur sports or activities are done by people as a hobby and not as a job.","masked":"______ sports or activities are done by people as a hobby and not as a job."},{"unit":3,"term":"annual","ipa":"/ˈænjuəl/","pos":"a.","def":"An annual event happens once every year.","masked":"An ______ event happens once every year."},{"unit":3,"term":"arena","ipa":"/əˈriːnə/","pos":"n.","def":"An arena is a large building with a big open area in the middle, used for sports events and other entertainments.","masked":"An ______ is a large building with a big open area in the middle, used for sports events and other entertainments."},{"unit":3,"term":"artificial","ipa":"/ˌɑːtɪˈfɪʃl/","pos":"a.","def":"Artificial things are made or produced by people, often as a copy of something natural.","masked":"______ things are made or produced by people, often as a copy of something natural."},{"unit":3,"term":"cap","ipa":"/kæp/","pos":"n.","def":"A cap is a limit that is set on an amount or number, especially an official one.","masked":"A ______ is a limit that is set on an amount or number, especially an official one."},{"unit":3,"term":"championship","ipa":"/ˈtʃæmpiənʃɪp/","pos":"n.","def":"A championship is a competition to find the best player or team in a particular sport or game.","masked":"A ______ is a competition to find the best player or team in a particular sport or game."},{"unit":3,"term":"crack","ipa":"/kræk/","pos":"n.","def":"A crack is a line on the surface of something where it has split without breaking into separate parts.","masked":"A ______ is a line on the surface of something where it has split without breaking into separate parts."},{"unit":3,"term":"crucial","ipa":"/ˈkruːʃl/","pos":"a.","def":"Something that is crucial is extremely important or necessary.","masked":"Something that is ______ is extremely important or necessary."},{"unit":3,"term":"curved","ipa":"/kɜːvd/","pos":"a.","def":"Something that is curved has a smooth, rounded shape rather than straight sides.","masked":"Something that is ______ has a smooth, rounded shape rather than straight sides."},{"unit":3,"term":"digit","ipa":"/ˈdɪdʒɪt/","pos":"n.","def":"A digit is a finger or toe.","masked":"A ______ is a finger or toe."},{"unit":3,"term":"engaging","ipa":"/ɪnˈɡeɪdʒɪŋ/","pos":"a.","def":"If you describe someone or something as engaging, you mean that they are attractive and interesting.","masked":"If you describe someone or something as ______, you mean that they are attractive and interesting."},{"unit":3,"term":"essential","ipa":"/ɪˈsenʃl/","pos":"a.","def":"Something that is essential is extremely important or absolutely necessary.","masked":"Something that is ______ is extremely important or absolutely necessary."},{"unit":3,"term":"estimated","ipa":"/ˈestɪmeɪtɪd/","pos":"a.","def":"An estimated amount or number is one that people calculate or guess to be correct.","masked":"An ______ amount or number is one that people calculate or guess to be correct."},{"unit":3,"term":"fake","ipa":"/feɪk/","pos":"a.","def":"Something that is fake is not genuine, but is made to look or seem genuine in order to deceive people.","masked":"Something that is ______ is not genuine, but is made to look or seem genuine in order to deceive people."},{"unit":3,"term":"fulfill","ipa":"/fʊlˈfɪl/","pos":"v.","def":"If you fulfill a hope, wish, or aim, you achieve it or make it happen.","masked":"If you ______ a hope, wish, or aim, you achieve it or make it happen."},{"unit":3,"term":"harness","ipa":"/ˈhɑːnɪs/","pos":"n.","def":"A harness is a set of straps and fastenings used to control or hold in place a person, animal, or object.","masked":"A ______ is a set of straps and fastenings used to control or hold in place a person, animal, or object."},{"unit":3,"term":"identical","ipa":"/aɪˈdentɪkl/","pos":"a.","def":"If two things are identical, they are exactly the same.","masked":"If two things are ______, they are exactly the same."},{"unit":3,"term":"investigate","ipa":"/ɪnˈvestɪɡeɪt/","pos":"v.","def":"If you investigate something, you examine it thoroughly in order to find out more about it.","masked":"If you ______ something, you examine it thoroughly in order to find out more about it."},{"unit":3,"term":"literally","ipa":"/ˈlɪtərəli/","pos":"ad.","def":"You use literally to emphasize that what you are saying is true, even though it seems exaggerated or surprising.","masked":"You use ______ to emphasize that what you are saying is true, even though it seems exaggerated or surprising."},{"unit":3,"term":"lucrative","ipa":"/ˈluːkrətɪv/","pos":"a.","def":"A lucrative activity, job, or business deal produces a lot of money.","masked":"A ______ activity, job, or business deal produces a lot of money."},{"unit":3,"term":"mellow","ipa":"/ˈmeləʊ/","pos":"a.","def":"Someone or something that is mellow is calm, peaceful, and easygoing.","masked":"Someone or something that is ______ is calm, peaceful, and easygoing."},{"unit":3,"term":"participant","ipa":"/pɑːˈtɪsɪpənt/","pos":"n.","def":"A participant is a person who takes part in an activity or event.","masked":"A ______ is a person who takes part in an activity or event."},{"unit":3,"term":"perspective","ipa":"/pəˈspektɪv/","pos":"n.","def":"A perspective is a particular way of thinking about something, especially one that is influenced by your beliefs or experiences.","masked":"A ______ is a particular way of thinking about something, especially one that is influenced by your beliefs or experiences."},{"unit":3,"term":"prestigious","ipa":"/preˈstɪdʒəs/","pos":"a.","def":"If you describe something as prestigious, you mean that it is respected and admired.","masked":"If you describe something as ______, you mean that it is respected and admired."},{"unit":3,"term":"pro","ipa":"/prəʊ/","pos":"a.","def":"A pro is someone who plays a sport or does an activity as a job rather than for enjoyment.","masked":"A ______ is someone who plays a sport or does an activity as a job rather than for enjoyment."},{"unit":3,"term":"quarterfinal","ipa":"/ˌkwɔːtəˈfaɪnl/","pos":"n.","def":"A quarterfinal is one of the four matches or contests that are played to decide which players or teams will take part in the semifinals.","masked":"A ______ is one of the four matches or contests that are played to decide which players or teams will take part in the semifinals."},{"unit":3,"term":"root for","ipa":"/ruːt fɔː(r)/","pos":"—","def":"If you root for someone, you support or encourage them in a competitive situation.","masked":"If you ______ someone, you support or encourage them in a competitive situation."},{"unit":3,"term":"scanner","ipa":"/ˈskænə(r)/","pos":"n.","def":"A scanner is a device that can read or copy images or text and convert them into digital data.","masked":"A ______ is a device that can read or copy images or text and convert them into digital data."},{"unit":3,"term":"sequence","ipa":"/ˈsiːkwəns/","pos":"n.","def":"A sequence is a set of events, actions, numbers, etc., which have a particular order and which lead to a particular result.","masked":"A ______ is a set of events, actions, numbers, etc., which have a particular order and which lead to a particular result."},{"unit":3,"term":"slippery","ipa":"/ˈslɪpəri/","pos":"a.","def":"Something that is slippery is difficult to hold, walk on, or move on because it is smooth, wet, or oily.","masked":"Something that is ______ is difficult to hold, walk on, or move on because it is smooth, wet, or oily."},{"unit":3,"term":"soar","ipa":"/sɔː(r)/","pos":"v.","def":"If an amount or level soars, it increases very quickly.","masked":"If an amount or level ______s, it increases very quickly."},{"unit":3,"term":"sophisticated","ipa":"/səˈfɪstɪkeɪtɪd/","pos":"a.","def":"A sophisticated machine or system is very complex and works in a clever way.","masked":"A ______ machine or system is very complex and works in a clever way."},{"unit":3,"term":"stability","ipa":"/stəˈbɪləti/","pos":"n.","def":"Stability is the quality of being stable, or not likely to change or fail.","masked":"______ is the quality of being stable, or not likely to change or fail."},{"unit":3,"term":"stringent","ipa":"/ˈstrɪndʒənt/","pos":"a.","def":"Stringent rules, laws, or conditions are very strict and must be obeyed.","masked":"______ rules, laws, or conditions are very strict and must be obeyed."},{"unit":3,"term":"substance","ipa":"/ˈsʌbstəns/","pos":"n.","def":"A substance is a particular type of solid, liquid, or gas.","masked":"A ______ is a particular type of solid, liquid, or gas."},{"unit":3,"term":"subtropical","ipa":"/ˌsʌbˈtrɒpɪkl/","pos":"a.","def":"Subtropical regions have a climate that is warm for most of the year, but not as hot as tropical regions.","masked":"______ regions have a climate that is warm for most of the year, but not as hot as tropical regions."},{"unit":3,"term":"unsustainable","ipa":"/ˌʌnsəˈsteɪnəbl/","pos":"a.","def":"Something that is unsustainable cannot continue at the same rate or level.","masked":"Something that is ______ cannot continue at the same rate or level."},{"unit":3,"term":"varied","ipa":"/ˈveərid/","pos":"a.","def":"If something is varied, it consists of many different things or has many different aspects.","masked":"If something is ______, it consists of many different things or has many different aspects."},{"unit":3,"term":"violation","ipa":"/ˌvaɪəˈleɪʃn/","pos":"n.","def":"A violation of a law, rule, or agreement is an action that breaks it.","masked":"A ______ of a law, rule, or agreement is an action that breaks it."},{"unit":3,"term":"workout","ipa":"/ˈwɜːkaʊt/","pos":"n.","def":"A workout is a period of physical exercise or training.","masked":"A ______ is a period of physical exercise or training."}];
+// --- 全局变量 ---
+let ALL_WORDS = []; // 存储从CSV加载的所有单词
 
-// Helpers
-const byUnit = (u)=>WORDS.filter(w=>w.unit===u);
-const uniqUnits = [...new Set(WORDS.map(w=>w.unit))].sort((a,b)=>a-b);
-const shuffle = (arr)=>arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(p=>p[1]);
-
-// TTS
-function speak(text){
-  try{
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-US';
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }catch(e){}
-}
-
-// DOM
+// --- DOM 引用 ---
+const csvSelect = document.getElementById('csvSelect');
 const unitSelect = document.getElementById('unitSelect');
 const btnStudy = document.getElementById('btnStudy');
 const btnQuiz = document.getElementById('btnQuiz');
 const content = document.getElementById('content');
 
-unitSelect.innerHTML = uniqUnits.map(u=>`<option value="${u}">Unit ${u}</option>`).join('');
+// --- CSV 文件列表 ---
+const CSV_FILES = [
+    "word_definitions.csv",
+];
 
-// Study Mode
-function renderStudy(unit){
-  let pool = shuffle(byUnit(unit));
-  let current = null;
-  let seen = 0, known = 0, unknown = 0;
+// --- 核心功能 ---
 
-  function draw(){
-    if(pool.length===0){
-      content.innerHTML = `<div class="q-head"><div class="pill">学习模式 · Unit ${unit}</div><div class="muted">完成！已掌握：${known}，待复习：${unknown}</div></div>`;
-      return;
-    }
-    current = pool.shift();
-    seen++;
-    const ipa = current.ipa && current.ipa.trim() ? current.ipa : '—';
-
-    content.innerHTML = `
-      <div class="q-head" style="justify-content:space-between;">
-        <div class="pill">学习模式 · Unit ${unit}</div>
-        <div class="pill">${seen}</div>
-      </div>
-      <div class="card">
-        <div class="term">
-          <span>${current.term}</span>
-          <button class="speak" id="speakBtn">🔊 发音</button>
-        </div>
-        <div class="ipa">${ipa}</div>
-        <div class="hint">点“认识/不认识”都会显示释义；再点释义进入下一词。</div>
-        <div style="display:flex; gap:8px; margin-top:10px;">
-          <button class="primary" id="btnKnow">认识</button>
-          <button class="ghost" id="btnDont">不认识</button>
-        </div>
-        <div id="revealBox"></div>
-      </div>`;
-
-    document.getElementById('speakBtn').onclick = ()=>speak(current.term);
-
-    const revealBox = document.getElementById('revealBox');
-    function reveal(mark){
-      if(mark==='known') known++; else unknown++;
-      revealBox.innerHTML = `
-        <div class="def-reveal" id="defReveal">
-          <div class="defs">${current.def}</div>
-          <div class="hint">（再点一下释义，进入下一词）</div>
-        </div>`;
-      document.getElementById('defReveal').onclick = ()=>{ 
-        if(mark==='unknown'){
-          const delay = Math.floor(Math.random()*3)+3;
-          pool.splice(Math.min(delay, pool.length), 0, current);
+function loadCSV(filename) {
+    content.innerHTML = `<div class="muted">正在加载 ${filename}...</div>`;
+    Papa.parse(`/vocabulary/${filename}`, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            ALL_WORDS = results.data.map(row => ({
+                unit: row.Unit || 'Default',
+                term: row.Word,
+                ipa: row.Phonetic,
+                def: row.Definition,
+                masked: row['Cloze Test'],
+                frequency: row.Frequency,
+                chinese_def: row['Chinese Definition']
+            }));
+            populateUnitSelector();
+            content.innerHTML = `<div class="muted">加载成功！请选择一个单元开始学习或测验。</div>`;
+            unitSelect.disabled = false;
+            btnStudy.disabled = false;
+            btnQuiz.disabled = false;
+        },
+        error: function(err) {
+            content.innerHTML = `<div class="muted" style="color:var(--bad)">加载文件失败: ${filename}。请确保文件存在于 /vocabulary/ 目录下。</div>`;
+            console.error("CSV Loading Error:", err);
         }
-        draw();
-      };
-    }
-    document.getElementById('btnKnow').onclick = ()=>reveal('known');
-    document.getElementById('btnDont').onclick = ()=>reveal('unknown');
-  }
-  draw();
-}
-
-// Quiz Mode (use masked definitions)
-function buildOptions(allInUnit, correct){
-  const wrongPool = allInUnit.filter(w=>w.term!==correct.term);
-  const picks = shuffle(wrongPool).slice(0,3).map(w=>w.masked);
-  const opts = shuffle([correct.masked, ...picks]);
-  return opts;
-}
-
-function renderQuiz(unit){
-  const list = shuffle(byUnit(unit));
-  let idx = 0, correct=0, wrong=0;
-
-  function headerHTML(){
-    return `
-      <div class="q-head">
-        <div class="pill">测验模式 · Unit ${unit}</div>
-        <div class="counts"><span class="good">正确：${correct}个</span><span class="bad">错误：${wrong}个</span></div>
-        <div class="pill" id="pillProg">${idx}/${list.length}</div>
-      </div>`;
-  }
-
-  content.innerHTML = headerHTML() + `
-    <div class="bar"><i id="barFill"></i></div>
-    <div class="quiz">
-      <div class="question" id="qbox"></div>
-      <div class="status" id="qStatus"></div>
-      <div style="margin-top:10px;display:flex;gap:8px">
-        <button class="ghost" id="btnPrev" disabled>上一题</button>
-        <button class="ghost" id="btnNext" disabled>下一题</button>
-        <button class="primary" id="btnRestart" style="margin-left:auto">重新开始</button>
-      </div>
-    </div>`;
-
-  const qStatus = ()=>document.getElementById('qStatus');
-  const pillProg = ()=>document.getElementById('pillProg');
-  const barFill = ()=>document.getElementById('barFill');
-  const btnPrev = ()=>document.getElementById('btnPrev');
-  const btnNext = ()=>document.getElementById('btnNext');
-  const btnRestart = ()=>document.getElementById('btnRestart');
-
-  function updateBar(){
-    pillProg().textContent = `${idx}/${list.length}`;
-    barFill().style.width = `${(idx/list.length)*100}%`;
-    content.querySelector('.q-head').outerHTML = headerHTML();
-  }
-
-  function showQuestion(){
-    const qbox = document.getElementById('qbox');
-    const w = list[idx];
-    const options = buildOptions(list, w);
-    qbox.innerHTML = `
-      <div class="q-term">${w.term}</div>
-      <div class="muted" style="margin:-4px 0 10px">选择正确的英文释义（已屏蔽）</div>
-      <div class="options">
-        ${options.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join('')}
-      </div>`;
-    qStatus().textContent = '';
-    btnNext().disabled = true;
-    btnPrev().disabled = idx===0;
-
-    qbox.querySelectorAll('.opt').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const chosen = btn.textContent;
-        const correctMasked = w.masked;
-        const nodes = qbox.querySelectorAll('.opt');
-        nodes.forEach(n=>{ if(n.textContent===correctMasked) n.classList.add('correct'); });
-        if(chosen===correctMasked){
-          btn.classList.add('correct'); qStatus().textContent = '✔ 正确！'; qStatus().className = 'status good'; correct++;
-        }else{
-          btn.classList.add('wrong'); qStatus().textContent = `✖ 错误。正确答案：${w.def}`; qStatus().className = 'status bad'; wrong++;
-        }
-        nodes.forEach(n=>n.disabled=true);
-        btnNext().disabled = false;
-        setTimeout(()=>{ if(!btnNext().disabled) next(); }, 1200);
-        updateBar();
-      }, {once:true});
     });
-    updateBar();
-  }
-
-  function next(){
-    idx++;
-    if(idx>=list.length){
-      const qbox = document.getElementById('qbox');
-      qbox.innerHTML = `<div class="q-term">完成！</div><div class="muted">得分：${correct} / ${list.length} · 错误：${wrong}</div>`;
-      qStatus().textContent='';
-      pillProg().textContent = `${list.length}/${list.length}`;
-      barFill().style.width = '100%';
-      btnNext().disabled = true;
-      btnPrev().disabled = list.length===0;
-      updateBar();
-      return;
-    }
-    showQuestion();
-  }
-
-  btnPrev().addEventListener('click', ()=>{ if(idx>0){ idx--; showQuestion(); } });
-  btnNext().addEventListener('click', ()=>{ next(); });
-  btnRestart().addEventListener('click', ()=>{ renderQuiz(unit); });
-
-  showQuestion();
 }
 
-btnStudy.addEventListener('click', ()=>{ const unit = parseInt(unitSelect.value,10); renderStudy(unit); });
-btnQuiz.addEventListener('click', ()=>{ const unit = parseInt(unitSelect.value,10); renderQuiz(unit); });
+function populateUnitSelector() {
+    const uniqueUnits = [...new Set(ALL_WORDS.map(w => w.unit))].sort();
+    unitSelect.innerHTML = uniqueUnits.map(u => `<option value="${u}">${u}</option>`).join('');
+}
+
+
+// --- 辅助函数 ---
+const byUnit = (u) => ALL_WORDS.filter(w => w.unit === u);
+const shuffle = (arr) => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[0]).map(p => p[1]);
+
+function speak(text) {
+    try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US';
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+    } catch (e) {}
+}
+
+function renderStars(frequency) {
+    if (!frequency || frequency === 'N/A') return '';
+    const match = frequency.match(/(\d+)\s*\/\s*5/);
+    if (!match) return '';
+    const count = parseInt(match[1], 10);
+    return '★'.repeat(count) + '☆'.repeat(5 - count);
+}
+
+
+// --- 学习模式 ---
+function renderStudy(unit) {
+    let pool = shuffle(byUnit(unit));
+    let current = null;
+    let seen = 0, known = 0, unknown = 0;
+
+    function draw() {
+        if (pool.length === 0) {
+            content.innerHTML = `<div class="q-head"><div class="pill">学习模式 · ${unit}</div><div class="muted">完成！已掌握：${known}，待复习：${unknown}</div></div>`;
+            return;
+        }
+        current = pool.shift();
+        seen++;
+        const ipa = current.ipa && current.ipa.trim() ? current.ipa : '—';
+        const starsHTML = `<span class="stars">${renderStars(current.frequency)}</span>`;
+        
+        // **核心修改 1**: 如果没有英文释义，则用中文释义代替
+        const hasEnDef = current.def && !current.def.includes('No Collins');
+        let enDefs = [];
+        let chDefs = [];
+        let combinedDef = '';
+        const hasChineseDef = current.chinese_def && current.chinese_def !== 'N/A';
+        
+        if (hasEnDef) {
+            enDefs = current.def.split(' | ');
+            if (hasChineseDef) {
+                chDefs = current.chinese_def.split(' | ');
+            }
+            combinedDef = enDefs.map((en, index) => {
+                const ch = chDefs[index] || '';
+                return `${en}<span class="ch-part">${ch}</span>`;
+            }).join('<br>');
+        } else if (hasChineseDef) {
+            // 没有英文释义，直接使用中文释义
+            combinedDef = current.chinese_def.replace(/ \| /g, '<br>');
+        } else {
+            combinedDef = '暂无释义';
+        }
+
+        const chineseToggleHTML = (hasEnDef && hasChineseDef) ? `
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="toggleChinese">
+                <label for="toggleChinese">显示中文释义</label>
+            </div>` : '';
+
+
+        content.innerHTML = `
+            <div class="q-head" style="justify-content:space-between;">
+                <div class="pill">学习模式 · ${unit}</div>
+                <div class="pill">${seen}</div>
+            </div>
+            <div class="card">
+                <div class="term">
+                    <span>${current.term}</span>
+                    <button class="speak" id="speakBtn">🔊 发音</button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="ipa">${ipa}</div>
+                    ${starsHTML}
+                </div>
+                ${chineseToggleHTML}
+                <div class="hint">点“认识/不认识”都会显示释义；再点释义进入下一词。</div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button class="primary" id="btnKnow">认识</button>
+                    <button class="ghost" id="btnDont">不认识</button>
+                </div>
+                <div id="revealBox"></div>
+            </div>`;
+
+        document.getElementById('speakBtn').onclick = () => speak(current.term);
+        
+        if (hasEnDef && hasChineseDef) {
+            document.getElementById('toggleChinese').addEventListener('change', (e) => {
+                const chParts = document.querySelectorAll('.ch-part');
+                chParts.forEach(part => {
+                    part.style.display = e.target.checked ? 'inline' : 'none';
+                });
+            });
+        }
+
+        const revealBox = document.getElementById('revealBox');
+        function reveal(mark) {
+            if (mark === 'known') known++; else unknown++;
+            revealBox.innerHTML = `
+                <div class="def-reveal" id="defReveal">
+                    <div class="defs">${combinedDef}</div>
+                    <div class="hint">（再点一下释义，进入下一词）</div>
+                </div>`;
+            document.getElementById('defReveal').onclick = () => {
+                if (mark === 'unknown') {
+                    const delay = Math.floor(Math.random() * 3) + 3;
+                    pool.splice(Math.min(delay, pool.length), 0, current);
+                }
+                draw();
+            };
+        }
+        document.getElementById('btnKnow').onclick = () => reveal('known');
+        document.getElementById('btnDont').onclick = () => reveal('unknown');
+    }
+    draw();
+}
+
+// --- 测验模式 ---
+function buildOptions(allInUnit, correct) {
+    const wrongPool = allInUnit.filter(w => w.term !== correct.term);
+    const picks = shuffle(wrongPool).slice(0, 3).map(w => w.masked);
+    const opts = shuffle([correct.masked, ...picks]);
+    return opts;
+}
+
+function renderQuiz(unit) {
+    // **核心修改 2**: 过滤掉不符合测验条件的单词
+    const allWordsInUnit = byUnit(unit);
+    const quizableWords = allWordsInUnit.filter(w => {
+        const hasEnDef = w.def && !w.def.includes('No Collins');
+        const hasMasked = w.masked && w.masked !== 'N/A';
+        return hasEnDef && hasMasked;
+    });
+
+    if (quizableWords.length < 4) {
+        content.innerHTML = `<div class="muted">本单元可供测验的单词不足4个，无法开始测验。</div>`;
+        return;
+    }
+
+    const list = shuffle(quizableWords);
+    let idx = 0, correct = 0, wrong = 0;
+
+    function headerHTML() {
+        return `
+            <div class="q-head">
+                <div class="pill">测验模式 · ${unit}</div>
+                <div class="counts"><span class="good">正确：${correct}个</span><span class="bad">错误：${wrong}个</span></div>
+                <div class="pill" id="pillProg">${idx}/${list.length}</div>
+            </div>`;
+    }
+
+    content.innerHTML = headerHTML() + `
+        <div class="bar"><i id="barFill"></i></div>
+        <div class="quiz">
+            <div class="question" id="qbox"></div>
+            <div class="status" id="qStatus"></div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+                <button class="ghost" id="btnPrev" disabled>上一题</button>
+                <button class="ghost" id="btnNext" disabled>下一题</button>
+                <button class="primary" id="btnRestart" style="margin-left:auto">重新开始</button>
+            </div>
+        </div>`;
+
+    const qStatus = () => document.getElementById('qStatus');
+    const pillProg = () => document.getElementById('pillProg');
+    const barFill = () => document.getElementById('barFill');
+    const btnPrev = () => document.getElementById('btnPrev');
+    const btnNext = () => document.getElementById('btnNext');
+    const btnRestart = () => document.getElementById('btnRestart');
+
+    function updateBar() {
+        pillProg().textContent = `${idx}/${list.length}`;
+        barFill().style.width = `${(idx / list.length) * 100}%`;
+        content.querySelector('.q-head').outerHTML = headerHTML();
+    }
+
+    function showQuestion() {
+        const qbox = document.getElementById('qbox');
+        const w = list[idx];
+        const options = buildOptions(list, w); // 使用过滤后的列表来构建选项
+        qbox.innerHTML = `
+            <div class="q-term">${w.term}</div>
+            <div class="muted" style="margin:-4px 0 10px">选择正确的英文释义（已屏蔽）</div>
+            <div class="options">
+                ${options.map((o, i) => `<button class="opt" data-i="${i}">${o}</button>`).join('')}
+            </div>`;
+        qStatus().textContent = '';
+        btnNext().disabled = true;
+        btnPrev().disabled = idx === 0;
+
+        qbox.querySelectorAll('.opt').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const chosen = btn.textContent;
+                const correctMasked = w.masked;
+                const nodes = qbox.querySelectorAll('.opt');
+                nodes.forEach(n => { if (n.textContent === correctMasked) n.classList.add('correct'); });
+                if (chosen === correctMasked) {
+                    btn.classList.add('correct'); qStatus().textContent = '✔ 正确！'; qStatus().className = 'status good'; correct++;
+                } else {
+                    btn.classList.add('wrong'); qStatus().textContent = `✖ 错误。正确答案：${w.def.replace(/ \| /g, '<br>')}`; qStatus().className = 'status bad'; wrong++;
+                }
+                nodes.forEach(n => n.disabled = true);
+                btnNext().disabled = false;
+                setTimeout(() => { if (!btnNext().disabled) next(); }, 1200);
+                updateBar();
+            }, { once: true });
+        });
+        updateBar();
+    }
+
+    function next() {
+        idx++;
+        if (idx >= list.length) {
+            const qbox = document.getElementById('qbox');
+            qbox.innerHTML = `<div class="q-term">完成！</div><div class="muted">得分：${correct} / ${list.length} · 错误：${wrong}</div>`;
+            qStatus().textContent = '';
+            pillProg().textContent = `${list.length}/${list.length}`;
+            barFill().style.width = '100%';
+            btnNext().disabled = true;
+            btnPrev().disabled = list.length === 0;
+            updateBar();
+            return;
+        }
+        showQuestion();
+    }
+
+    btnPrev().addEventListener('click', () => { if (idx > 0) { idx--; showQuestion(); } });
+    btnNext().addEventListener('click', () => { next(); });
+    btnRestart().addEventListener('click', () => { renderQuiz(unit); });
+
+    showQuestion();
+}
+
+// --- 事件监听与初始化 ---
+csvSelect.innerHTML = CSV_FILES.map(f => `<option value="${f}">${f}</option>`).join('');
+csvSelect.addEventListener('change', (e) => { loadCSV(e.target.value); });
+btnStudy.addEventListener('click', () => { const unit = unitSelect.value; renderStudy(unit); });
+btnQuiz.addEventListener('click', () => { const unit = unitSelect.value; renderQuiz(unit); });
+
+if (CSV_FILES.length > 0) {
+    loadCSV(CSV_FILES[0]);
+}
+
 </script>
 </body>
 </html>
